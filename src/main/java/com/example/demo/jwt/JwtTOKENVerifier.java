@@ -12,11 +12,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import javax.crypto.SecretKey;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.awt.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -24,26 +24,33 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class JwtTOKENVerifier extends OncePerRequestFilter {
+     //inject  JWt config  and secret keys  and using
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
 
+    public JwtTOKENVerifier(SecretKey secretKey, JwtConfig jwtConfig) {
+        this.secretKey = secretKey;
+        this.jwtConfig = jwtConfig;
+    }
 
     @Override//<1>Verifier token
     protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain) throws ServletException, IOException {
        //*1.0 Recuperation TOKEN  identifier="Authorization"
-        String authorizationHeader = httpServletRequest.getHeader("Authorization");
+        String authorizationHeader = httpServletRequest.getHeader(jwtConfig.getAuthorizationHeader());
 
         //*1.1 check if token contains a string barer in begining an not null
-        if (Strings.isNullOrEmpty(authorizationHeader)||!authorizationHeader.startsWith("Bearer")){
+        if (Strings.isNullOrEmpty(authorizationHeader)||!authorizationHeader.startsWith(jwtConfig.getTokenPrefix())){
             return;
         }
-        //*1.2 ecraze barer for have only datatoken (request = berer+data )
-        String token =authorizationHeader.replace("Bearer","");
+        //*1.2 ecraze barer for have only datatoken (request = berer()prefix+data )
+        String token =authorizationHeader.replace(jwtConfig.getTokenPrefix(),"");
 
         //*1.3 try get token
         try {
-            String key="securesecuresecuresecuresecuresecuresecuresecure";//secret key for hashing
+
 
            Jws<Claims> claimsJws= Jwts.parser() //recuperation gen
-                    .setSigningKey(Keys.hmacShaKeyFor(key.getBytes()))
+                    .setSigningKey(secretKey)
                     .parseClaimsJws(token);
            Claims body=claimsJws.getBody();//get body
            String username = body.getSubject();//get subjetc usename

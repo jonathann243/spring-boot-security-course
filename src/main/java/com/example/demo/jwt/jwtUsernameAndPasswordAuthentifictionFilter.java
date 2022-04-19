@@ -2,13 +2,13 @@ package com.example.demo.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import javax.crypto.SecretKey;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -18,11 +18,20 @@ import java.time.LocalDate;
 import java.util.Date;
 
 public class jwtUsernameAndPasswordAuthentifictionFilter extends UsernamePasswordAuthenticationFilter {
-    //job is verified credential
-    private final AuthenticationManager authenticationManager;
+    //job  of class is verified credential
 
-    public jwtUsernameAndPasswordAuthentifictionFilter(AuthenticationManager authenticationManager) {
+
+    private final AuthenticationManager authenticationManager;
+    //inject  JWt config  and secret keys  and using in bottom
+    private final  JwtConfig jwtConfig;
+    private final SecretKey SecretKey;
+
+    public jwtUsernameAndPasswordAuthentifictionFilter(AuthenticationManager authenticationManager,
+                                                       JwtConfig jwtConfig
+                                                        , javax.crypto.SecretKey secretKey) {
         this.authenticationManager = authenticationManager;
+        this.jwtConfig = jwtConfig;
+        SecretKey = secretKey;
     }
 
 
@@ -51,16 +60,15 @@ public class jwtUsernameAndPasswordAuthentifictionFilter extends UsernamePasswor
 
     @Override// <2>construction token
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-       //2.1 Create key
-        String key="securesecuresecuresecuresecuresecuresecuresecure";
+
         //2.2 Buil token
         String token = Jwts.builder()
                 .setSubject(authResult.getName())
                  .claim("authorities",authResult.getAuthorities())
                   .setIssuedAt(new Date())
                    .setExpiration(java.sql.Date.valueOf(LocalDate.now().plusWeeks(2)))//define day of expiration
-                   .signWith(Keys.hmacShaKeyFor(key.getBytes())).compact();
+                   .signWith(SecretKey).compact();
         //ajout du Token a la reponse retourner
-        response.addHeader("Authorization","Bearer "+token);
+        response.addHeader(jwtConfig.getAuthorizationHeader(), jwtConfig.getTokenPrefix() +token);
     }
 }
