@@ -24,6 +24,15 @@ public class StudentManagementController {
         System.out.println("getAllStudents");
         return STUDENTS;
     }
+    @GetMapping(path = "{studentId}")
+    public Student getStudent(@PathVariable("studentId") Integer studentId) {
+        return STUDENTS.stream()
+                .filter(student -> studentId.equals(student.getStudentId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Student " + studentId + " does not exists"
+                ));
+    }
 
     @PostMapping
     @PreAuthorize("hasAuthority('student:write')")

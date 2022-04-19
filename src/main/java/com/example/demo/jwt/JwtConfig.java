@@ -41,7 +41,7 @@ public class JwtConfig {
     public void setTokenExpirationAfterDays(Integer tokenExpirationAfterDays) {
         this.tokenExpirationAfterDays = tokenExpirationAfterDays;
     }
-    //@Bean
+    @Bean
     public SecretKey  getSecretKeyForSigning(){
         return Keys.hmacShaKeyFor(secretKey.getBytes());
         //definition du secret key
